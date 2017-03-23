@@ -8,10 +8,18 @@ namespace HexaBotImplementation
 {
     public class GameState
     {
+        enum GameStatus { WIN, LOSE, ONGOING };
+        enum HexStatus { ME, OPP, EMPTY };
+
         private int[][] board;
+
         private int lastMovei;
+
         private int lastMovej;
+
+
         static Dictionary<GameState, double> probabilityTable;
+
         static List<GameState> gameHistory;
         public GameState(int[][] board, int lastMovei, int lastMovej)
         {
@@ -52,7 +60,7 @@ namespace HexaBotImplementation
             //TODO Generate all possible game states from current state
             return null;
         }
-        public GameStatus CheckGameStatus()
+        private GameStatus CheckGameStatus()
         {
             //TODO
             //If I win

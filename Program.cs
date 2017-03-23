@@ -6,8 +6,6 @@ using System.Threading.Tasks;
 
 namespace HexaBotImplementation
 {
-    public enum GameStatus { WIN, LOSE, ONGOING };
-    public enum HexStatus { ME, OPP, EMPTY };
     class Program
     {
         static void Main(string[] args)
