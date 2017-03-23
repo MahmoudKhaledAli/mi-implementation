@@ -8,27 +8,30 @@ namespace HexaBotImplementation
 {
     public class GameState
     {
-        enum GameStatus { WIN, LOSE, ONGOING };
-        enum HexStatus { ME, OPP, EMPTY };
+        public enum GameStatus { WIN, LOSE, ONGOING };
 
-        private int[][] board;
+        private int[,] board;
 
         private int lastMovei;
 
         private int lastMovej;
 
+        const int rows = 11;
 
-        static Dictionary<GameState, double> probabilityTable;
+        const int cols = 11;
+
+
+        static Dictionary<int[,], double> probabilityTable;
 
         static List<GameState> gameHistory;
-        public GameState(int[][] board, int lastMovei, int lastMovej)
+        public GameState(int[,] board, int lastMovei, int lastMovej)
         {
             this.board = board;
             this.lastMovei = lastMovei;
             this.lastMovej = lastMovej;
         }
 
-        public int[][] GetBoard()
+        public int[,] GetBoard()
         {
             return board;
         }
@@ -55,10 +58,46 @@ namespace HexaBotImplementation
             //TODO updates and re-writes probability table based on gameHistory
             return;
         }
+        public static int[,] CopyBoard(int[,] board)
+        {
+            int[,] temp = new int[rows, cols];
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    temp[i, j] = board[i, j];
+                }
+            }
+            return temp;
+        }
         public List<GameState> GenerateMoves(bool player)
         {
             //TODO Generate all possible game states from current state
-            return null;
+            int move;
+            List<GameState> generatedStates = new List<GameState>();
+            if (player)
+            {
+                move = 1; //mine
+            }
+            else
+            {
+                move = 2; //the opponent's
+            }
+
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    if (board[i, j] == 0)
+                    {
+                        int[,] newBoard = CopyBoard(board);
+                        newBoard[i, j] = move;
+                        GameState generated = new GameState(newBoard, i, j);
+                        generatedStates.Add(generated);
+                    }
+                }
+            }
+            return generatedStates;
         }
         private GameStatus CheckGameStatus()
         {
@@ -87,13 +126,13 @@ namespace HexaBotImplementation
         }
         public double GetProbability()
         {
-            if (probabilityTable.ContainsKey(this))
+            if (probabilityTable.ContainsKey(board))
             {
-                return probabilityTable[this];
+                return probabilityTable[board];
             }
             else
             {
-               probabilityTable.Add(this, 0.5d);
+               probabilityTable.Add(board, 0.5d);
                 return 0.5d;
             }
         }
