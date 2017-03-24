@@ -8,6 +8,8 @@ namespace HexaBotImplementation
 {
     public class GameState
     {
+        public enum GameStatus { WIN, LOSE, ONGOING };
+
         private int[,] board;
 
         private int lastMovei;
@@ -18,6 +20,10 @@ namespace HexaBotImplementation
 
         const int cols = 11;
 
+
+        static Dictionary<int[,], double> probabilityTable;
+
+        static List<GameState> gameHistory;
         public GameState(int[,] board, int lastMovei, int lastMovej)
         {
             this.board = board;
@@ -41,7 +47,17 @@ namespace HexaBotImplementation
         {
             return new GameState(board, lastMovei, lastMovej);
         }
-        
+        public void ReadProbabilityTable()
+        {
+            //TODO reads probabilities from file
+            probabilityTable = null;
+            return;
+        }
+        public void UpdateProbabilityTable()
+        {
+            //TODO updates and re-writes probability table based on gameHistory
+            return;
+        }
         public static int[,] CopyBoard(int[,] board)
         {
             int[,] temp = new int[rows, cols];
@@ -83,20 +99,20 @@ namespace HexaBotImplementation
             }
             return generatedStates;
         }
-        private GameController.GameStatus CheckGameStatus()
+        private GameStatus CheckGameStatus()
         {
             //TODO
             //If I win
-            return GameController.GameStatus.WIN;
+            return GameStatus.WIN;
             //If I lose
-            return GameController.GameStatus.LOSE;
+            return GameStatus.LOSE;
             //If game is still going
-            return GameController.GameStatus.ONGOING;
+            return GameStatus.ONGOING;
         }
         public bool IsEnd()
         {
-            GameController.GameStatus status = CheckGameStatus();
-            return status == GameController.GameStatus.WIN || status == GameController.GameStatus.LOSE;
+            GameStatus status = CheckGameStatus();
+            return status == GameStatus.WIN || status == GameStatus.LOSE;
         }
         public double GetThreats()
         {
@@ -108,7 +124,7 @@ namespace HexaBotImplementation
             //TODO Get the y reduction heuristic
             return 0.0d;
         }
-        public double GetProbability(Dictionary<int[,], double> probabilityTable)
+        public double GetProbability()
         {
             if (probabilityTable.ContainsKey(board))
             {
@@ -120,9 +136,9 @@ namespace HexaBotImplementation
                 return 0.5d;
             }
         }
-        public double GetTotalHeuristic(Dictionary<int[,], double> probabilityTable)
+        public double GetTotalHeuristic()
         {
-            return GetThreats() * GetYReduction() * GetProbability(probabilityTable);
+            return GetThreats() * GetYReduction() * GetProbability();
         }
     }
 }
