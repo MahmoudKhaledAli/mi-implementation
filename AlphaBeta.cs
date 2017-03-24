@@ -23,18 +23,18 @@ namespace HexaBotImplementation
         {
             return bestMovej;
         }
-        public double Iterate(GameState state, int depth, double alpha, double beta, bool player)
+        public double Iterate(GameState state, int depth, double alpha, double beta, bool player, Dictionary<int[,], double> probabilityTable)
         {
             if (depth == 0 || state.IsEnd())
             {
-                return state.GetTotalHeuristic();
+                return state.GetTotalHeuristic(probabilityTable);
             }
 
             if (player == maxPlayer)
             {
                 foreach (GameState child in state.GenerateMoves(player))
                 {
-                    double temp = Iterate(child, depth - 1, alpha, beta, !player);
+                    double temp = Iterate(child, depth - 1, alpha, beta, !player, probabilityTable);
                     if (temp > alpha) 
                     {
                         this.bestMovei = child.GetLastMoveI();
@@ -55,7 +55,7 @@ namespace HexaBotImplementation
             {
                 foreach (GameState child in state.GenerateMoves(player))
                 {
-                    beta = Math.Min(beta, Iterate(child, depth - 1, alpha, beta, !player));
+                    beta = Math.Min(beta, Iterate(child, depth - 1, alpha, beta, !player, probabilityTable));
 
                     if (beta < alpha)
                     {
