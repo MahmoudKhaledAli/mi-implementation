@@ -3,9 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace HexaBotImplementation
 {
+   
+
+
     public class GameState
     {
         public enum GameStatus { WIN, LOSE, ONGOING };
@@ -19,8 +23,7 @@ namespace HexaBotImplementation
         const int rows = 11;
 
         const int cols = 11;
-
-
+        
         static Dictionary<int[,], double> probabilityTable;
 
         static List<GameState> gameHistory;
@@ -50,11 +53,27 @@ namespace HexaBotImplementation
         public void ReadProbabilityTable()
         {
             //TODO reads probabilities from file
-            probabilityTable = null;
+            probabilityTable = new Dictionary<int[,], double>();
+            Deserialize();
             return;
         }
         public void UpdateProbabilityTable()
         {
+            for(int i=0;i< gameHistory.Count(); i++)
+            {
+                double currentprob=0;
+                if(probabilityTable.ContainsKey(gameHistory[i].GetBoard()))
+                {
+                    currentprob = probabilityTable[gameHistory[i].GetBoard()];
+                    probabilityTable[gameHistory[i].GetBoard()] = currentprob + (((i+1) * 0.1) / gameHistory.Count());
+                }
+                else
+                {
+                    probabilityTable.Add(gameHistory[i].GetBoard(), ((i + 1) * 0.1) / gameHistory.Count());
+                }
+            }
+            Serialize();
+            
             //TODO updates and re-writes probability table based on gameHistory
             return;
         }
@@ -139,6 +158,34 @@ namespace HexaBotImplementation
         public double GetTotalHeuristic()
         {
             return GetThreats() * GetYReduction() * GetProbability();
+        }
+        private void Deserialize()
+        {
+            try
+            {
+                var f_fileStream = File.OpenRead(@"dictionarySerialized.xml");
+                var f_binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                probabilityTable = (Dictionary<int[,],double>)f_binaryFormatter.Deserialize(f_fileStream);
+                f_fileStream.Close();
+            }
+            catch (Exception ex)
+            {
+                ;
+            }
+        }
+        private void Serialize()
+        {
+            try
+            {
+                var f_fileStream = new FileStream(@"dictionarySerialized.xml", FileMode.Create, FileAccess.Write);
+                var f_binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                f_binaryFormatter.Serialize(f_fileStream, probabilityTable);
+                f_fileStream.Close();
+            }
+            catch (Exception ex)
+            {
+                ;
+            }
         }
     }
 }
