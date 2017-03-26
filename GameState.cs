@@ -61,11 +61,9 @@ namespace HexaBotImplementation
         {
             for(int i=0;i< gameHistory.Count(); i++)
             {
-                double currentprob=0;
                 if(probabilityTable.ContainsKey(gameHistory[i].GetBoard()))
                 {
-                    currentprob = probabilityTable[gameHistory[i].GetBoard()];
-                    probabilityTable[gameHistory[i].GetBoard()] = currentprob + (((i+1) * 0.1) / gameHistory.Count());
+                    probabilityTable[gameHistory[i].GetBoard()] = gameHistory[i].GetProbability() + (((i+1) * 0.1) / gameHistory.Count());
                 }
                 else
                 {
