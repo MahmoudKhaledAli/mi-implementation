@@ -40,16 +40,7 @@ namespace HexaBotImplementation
         }
         public override int GetHashCode()
         {
-            int code = 0;
-            int counter = 0;
-            for (int i = 0; i < rows; i++)
-            {
-                for (int j = 0; j < cols; j++)
-                {
-                    code += board[i, j] * (int)Math.Pow(10, counter++);
-                }
-            }
-            return code;
+            return Hashing.Hash(this);
         }
         public static int getRows()
         {
