@@ -176,7 +176,7 @@ namespace HexaBotImplementation
             {
                 var f_fileStream = File.OpenRead(@"dictionarySerialized.xml");
                 var f_binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
-                probabilityTable = (Dictionary<int[,],double>)f_binaryFormatter.Deserialize(f_fileStream);
+                probabilityTable = (Dictionary<GameState,double>)f_binaryFormatter.Deserialize(f_fileStream);
                 f_fileStream.Close();
             }
             catch (Exception ex)
