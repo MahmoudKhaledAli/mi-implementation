@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,7 +7,7 @@ using System.IO;
 
 namespace HexaBotImplementation
 {
-   
+
 
 
     public class GameState
@@ -34,7 +34,7 @@ namespace HexaBotImplementation
             {
                 for (int j = 0; j < cols; j++)
                 {
-                    if (board[i,j] != state.board[i,j])
+                    if (board[i, j] != state.board[i, j])
                     {
                         return false;
                     }
@@ -72,11 +72,11 @@ namespace HexaBotImplementation
         }
         public void UpdateProbabilityTable()
         {
-            for(int i=0;i< gameHistory.Count(); i++)
+            for (int i = 0; i < gameHistory.Count(); i++)
             {
-                if(probabilityTable.ContainsKey(gameHistory[i]))
+                if (probabilityTable.ContainsKey(gameHistory[i]))
                 {
-                    probabilityTable[gameHistory[i]] = gameHistory[i].GetProbability() + (((i+1) * 0.1) / gameHistory.Count());
+                    probabilityTable[gameHistory[i]] = gameHistory[i].GetProbability() + (((i + 1) * 0.1) / gameHistory.Count());
                 }
                 else
                 {
@@ -84,7 +84,7 @@ namespace HexaBotImplementation
                 }
             }
             Serialize();
-            
+
             //TODO updates and re-writes probability table based on gameHistory
             return;
         }
@@ -152,7 +152,7 @@ namespace HexaBotImplementation
         public double GetYReduction()
         {
             //TODO Get the y reduction heuristic
-            return 0.0d;
+            return microReduction(convertToY(), 2 * (rows - 1));
         }
         public double GetProbability()
         {
@@ -162,7 +162,7 @@ namespace HexaBotImplementation
             }
             else
             {
-               probabilityTable.Add(this, 0.5d);
+                probabilityTable.Add(this, 0.5d);
                 return 0.5d;
             }
         }
@@ -176,7 +176,7 @@ namespace HexaBotImplementation
             {
                 var f_fileStream = File.OpenRead(@"dictionarySerialized.xml");
                 var f_binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
-                probabilityTable = (Dictionary<GameState,double>)f_binaryFormatter.Deserialize(f_fileStream);
+                probabilityTable = (Dictionary<GameState, double>)f_binaryFormatter.Deserialize(f_fileStream);
                 f_fileStream.Close();
             }
             catch (Exception ex)
@@ -197,6 +197,76 @@ namespace HexaBotImplementation
             {
                 ;
             }
+        }
+        private double[][] createNewY(int size)
+        {
+            double[][] gameOfY = new double[size][];
+            for (int i = 0; i < size; i++)
+            {
+                gameOfY[i] = new double[i + 1];
+            }
+            return gameOfY;
+        }
+        private double[][] convertToY()
+        {
+            double[][] gameOfY = createNewY(2 * (rows - 1));
+            for (int i = 0; i < rows - 1; i++)
+            {
+                for (int j = 0; j < i + 1; j++)
+                {
+                    gameOfY[i][j] = 0;
+                }
+            }
+            for (int i = rows - 1; i < 2 * (rows - 1); i++)
+            {
+                for (int j = 0; j < i - rows + 1; j++)
+                {
+                    gameOfY[i][j] = 1;
+                }
+                for (int j = i - rows + 1; j < i + 1; j++)
+                {
+                    switch (board[i - rows + 1, j - i + rows - 1])
+                    {
+                        case 0:
+                            gameOfY[i][j] = 0.5d;
+                            break;
+                        case 1:
+                            gameOfY[i][j] = 1.0d;
+                            break;
+                        case 2:
+                            gameOfY[i][j] = 0.0d;
+                            break;
+                        default:
+                            gameOfY[i][j] = 0.5d;
+                            break;
+                    }
+                }
+            }
+
+            return gameOfY;
+        }
+        private double calculateReductionProbability(double p1, double p2, double p3)
+        {
+            return p1 * p2 + p1 * p3 + p2 * p3 - 2 * p1 * p2 * p3;
+        }
+        private double microReduction(double[][] gameOfY, int size)
+        {
+            if (size == 1)
+            {
+                return gameOfY[0][0];
+            }
+
+            double[][] newGameOfY = createNewY(size - 1);
+            
+            for (int i = 0; i < gameOfY.Length - 1; i++)
+            {
+                for (int j = 0; j < i + 1; j++)
+                {
+                    newGameOfY[i][j] = calculateReductionProbability(gameOfY[i][j], gameOfY[i + 1][j + 1], gameOfY[i + 1][j]);
+                }
+            }
+
+            return microReduction(newGameOfY, size - 1);
         }
     }
 }
