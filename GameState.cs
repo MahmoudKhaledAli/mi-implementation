@@ -12,40 +12,61 @@ namespace HexaBotImplementation
 
         private int[,] board;
 
-        private int lastMovei;
-
-        private int lastMovej;
-
         const int rows = 11;
 
         const int cols = 11;
 
-
         static Dictionary<int[,], double> probabilityTable;
 
         static List<GameState> gameHistory;
-        public GameState(int[,] board, int lastMovei, int lastMovej)
+        public GameState(int[,] board)
         {
             this.board = board;
-            this.lastMovei = lastMovei;
-            this.lastMovej = lastMovej;
+        }
+        public override bool Equals(object obj)
+        {
+            var state = obj as GameState;
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    if (board[i,j] != state.board[i,j])
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        public override int GetHashCode()
+        {
+            int code = 0;
+            int counter = 0;
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    code += board[i, j] * (int)Math.Pow(10, counter++);
+                }
+            }
+            return code;
+        }
+        public static int getRows()
+        {
+            return rows;
+        }
+        public static int getCols()
+        {
+            return cols;
         }
 
         public int[,] GetBoard()
         {
             return board;
         }
-        public int GetLastMoveI()
-        {
-            return lastMovei;
-        }
-        public int GetLastMoveJ()
-        {
-            return lastMovej;
-        }
         public GameState Copy()
         {
-            return new GameState(board, lastMovei, lastMovej);
+            return new GameState(board);
         }
         public void ReadProbabilityTable()
         {
@@ -92,7 +113,7 @@ namespace HexaBotImplementation
                     {
                         int[,] newBoard = CopyBoard(board);
                         newBoard[i, j] = move;
-                        GameState generated = new GameState(newBoard, i, j);
+                        GameState generated = new GameState(newBoard);
                         generatedStates.Add(generated);
                     }
                 }
