@@ -7,9 +7,6 @@ using System.IO;
 
 namespace HexaBotImplementation
 {
-
-
-
     public class GameState
     {
         public enum GameStatus { WIN, LOSE, ONGOING };
@@ -23,6 +20,16 @@ namespace HexaBotImplementation
         static Dictionary<GameState, double> probabilityTable;
 
         static List<GameState> gameHistory;
+        private struct Position
+        {
+            public int i;
+            public int j;
+            public Position(int i, int j) : this()
+            {
+                this.i = i;
+                this.j = j;
+            }
+        }
         public GameState(int[,] board)
         {
             this.board = board;
@@ -88,7 +95,7 @@ namespace HexaBotImplementation
             //TODO updates and re-writes probability table based on gameHistory
             return;
         }
-        public static int[,] CopyBoard(int[,] board)
+        private static int[,] CopyBoard(int[,] board)
         {
             int[,] temp = new int[rows, cols];
             for (int i = 0; i < rows; i++)
@@ -129,13 +136,115 @@ namespace HexaBotImplementation
             }
             return generatedStates;
         }
-        private GameStatus CheckGameStatus()
+        private bool InRange(int i, int j)
+        {
+            return i >= 0 && i < 11 && j >= 0 && j < 11;
+        }
+        private List<Position> GetAdjacent(Position pos)
+        {
+            List<Position> adjacents = new List<Position>();
+            if (InRange(pos.i + 1, pos.j))
+            {
+                adjacents.Add(new Position(pos.i + 1, pos.j));
+            }
+
+            if (InRange(pos.i - 1, pos.j))
+            {
+                adjacents.Add(new Position(pos.i - 1, pos.j));
+            }
+
+            if (InRange(pos.i, pos.j + 1))
+            {
+                adjacents.Add(new Position(pos.i, pos.j + 1));
+            }
+
+            if (InRange(pos.i, pos.j - 1))
+            {
+                adjacents.Add(new Position(pos.i, pos.j - 1));
+            }
+            
+            if (InRange(pos.i - 1, pos.j + 1))
+            {
+                adjacents.Add(new Position(pos.i - 1, pos.j - 1));
+            }
+
+            if (InRange(pos.i + 1, pos.j - 1))
+            {
+                adjacents.Add(new Position(pos.i + 1, pos.j - 1));
+            }
+
+            return adjacents;
+        }
+        public GameStatus CheckGameStatus()
         {
             //TODO
             //If I win
-            return GameStatus.WIN;
-            //If I lose
-            return GameStatus.LOSE;
+            Queue<Position> myPositions = new Queue<Position>();
+            Position myPosition;
+            int[,] dummyBoard = CopyBoard(board);
+
+            for (int i = 0; i < rows; i++)
+            {
+                if (dummyBoard[i, 0] == 1)
+                {
+                    myPositions.Enqueue(new Position(i, 0));
+                    dummyBoard[i, 0] = 0;
+                }
+            }
+
+            while (myPositions.Count != 0)
+            {
+                myPosition = myPositions.Dequeue();
+                foreach (Position pos in GetAdjacent(myPosition))
+                {
+                    if (dummyBoard[pos.i, pos.j] == 1)
+                    {
+                        if (pos.j == 10)
+                        {
+                            return GameStatus.WIN;
+                        }
+                        else
+                        {
+                            myPositions.Enqueue(pos);
+                            dummyBoard[pos.i, pos.j] = 0;
+                        }
+                    }
+                }
+            }
+
+            dummyBoard = CopyBoard(board);
+            Queue<Position> oppPositions = new Queue<Position>();
+            Position oppPosition;
+
+            for (int i = 0; i < cols; i++)
+            {
+                if (dummyBoard[0, i] == 2)
+                {
+                    oppPositions.Enqueue(new Position(0, i));
+                    dummyBoard[0, i] = 0;
+                }
+            }
+
+            while (oppPositions.Count != 0)
+            {
+                oppPosition = oppPositions.Dequeue();
+                foreach (Position pos in GetAdjacent(oppPosition))
+                {
+                    if (dummyBoard[pos.i, pos.j] == 2)
+                    {
+                        if (pos.i == 10)
+                        {
+                            return GameStatus.LOSE;
+                        }
+                        else
+                        {
+                            oppPositions.Enqueue(pos);
+                            dummyBoard[pos.i, pos.j] = 0;
+                        }
+                    }
+                }
+            }
+            
             //If game is still going
             return GameStatus.ONGOING;
         }
@@ -144,7 +253,7 @@ namespace HexaBotImplementation
             GameStatus status = CheckGameStatus();
             return status == GameStatus.WIN || status == GameStatus.LOSE;
         }
-        public double GetThreats()
+        private double GetThreats()
         {
             //TODO Get the heuristic function of the threats
             return 0.0d;
@@ -154,7 +263,7 @@ namespace HexaBotImplementation
             //TODO Get the y reduction heuristic
             return microReduction(convertToY(), 2 * (rows - 1));
         }
-        public double GetProbability()
+        private double GetProbability()
         {
             if (probabilityTable.ContainsKey(this))
             {
@@ -258,7 +367,7 @@ namespace HexaBotImplementation
 
             double[][] newGameOfY = createNewY(size - 1);
             
-            for (int i = 0; i < gameOfY.Length - 1; i++)
+            for (int i = 0; i < size - 1; i++)
             {
                 for (int j = 0; j < i + 1; j++)
                 {
