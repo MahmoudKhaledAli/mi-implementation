@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,44 +16,57 @@ namespace HexaBotImplementation
 
         private int[,] board;
 
-        private int lastMovei;
-
-        private int lastMovej;
-
         const int rows = 11;
 
         const int cols = 11;
-        
-        static Dictionary<int[,], double> probabilityTable;
+
+        static Dictionary<GameState, double> probabilityTable;
 
         static List<GameState> gameHistory;
-        public GameState(int[,] board, int lastMovei, int lastMovej)
+        public GameState(int[,] board)
         {
             this.board = board;
-            this.lastMovei = lastMovei;
-            this.lastMovej = lastMovej;
+        }
+        public override bool Equals(object obj)
+        {
+            var state = obj as GameState;
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    if (board[i,j] != state.board[i,j])
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        public override int GetHashCode()
+        {
+            return Hashing.Hash(this);
+        }
+        public static int getRows()
+        {
+            return rows;
+        }
+        public static int getCols()
+        {
+            return cols;
         }
 
         public int[,] GetBoard()
         {
             return board;
         }
-        public int GetLastMoveI()
-        {
-            return lastMovei;
-        }
-        public int GetLastMoveJ()
-        {
-            return lastMovej;
-        }
         public GameState Copy()
         {
-            return new GameState(board, lastMovei, lastMovej);
+            return new GameState(board);
         }
         public void ReadProbabilityTable()
         {
             //TODO reads probabilities from file
-            probabilityTable = new Dictionary<int[,], double>();
+            probabilityTable = new Dictionary<GameState, double>();
             Deserialize();
             return;
         }
@@ -61,13 +74,13 @@ namespace HexaBotImplementation
         {
             for(int i=0;i< gameHistory.Count(); i++)
             {
-                if(probabilityTable.ContainsKey(gameHistory[i].GetBoard()))
+                if(probabilityTable.ContainsKey(gameHistory[i]))
                 {
-                    probabilityTable[gameHistory[i].GetBoard()] = gameHistory[i].GetProbability() + (((i+1) * 0.1) / gameHistory.Count());
+                    probabilityTable[gameHistory[i]] = gameHistory[i].GetProbability() + (((i+1) * 0.1) / gameHistory.Count());
                 }
                 else
                 {
-                    probabilityTable.Add(gameHistory[i].GetBoard(), ((i + 1) * 0.1) / gameHistory.Count());
+                    probabilityTable.Add(gameHistory[i], ((i + 1) * 0.1) / gameHistory.Count());
                 }
             }
             Serialize();
@@ -109,7 +122,7 @@ namespace HexaBotImplementation
                     {
                         int[,] newBoard = CopyBoard(board);
                         newBoard[i, j] = move;
-                        GameState generated = new GameState(newBoard, i, j);
+                        GameState generated = new GameState(newBoard);
                         generatedStates.Add(generated);
                     }
                 }
@@ -143,13 +156,13 @@ namespace HexaBotImplementation
         }
         public double GetProbability()
         {
-            if (probabilityTable.ContainsKey(board))
+            if (probabilityTable.ContainsKey(this))
             {
-                return probabilityTable[board];
+                return probabilityTable[this];
             }
             else
             {
-               probabilityTable.Add(board, 0.5d);
+               probabilityTable.Add(this, 0.5d);
                 return 0.5d;
             }
         }

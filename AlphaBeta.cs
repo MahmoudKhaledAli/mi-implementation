@@ -9,61 +9,56 @@ namespace HexaBotImplementation
     public class AlphaBeta
     {
         bool maxPlayer = true;
-        private int bestMovei;
-        private int bestMovej;
-
         public AlphaBeta()
         {
         }
-        public int GetBestMoveI()
+        public MoveValue Iterate(GameState state, int depth, double alpha, double beta, bool player)
         {
-            return bestMovei;
-        }
-        public int GetBestMoveJ()
-        {
-            return bestMovej;
-        }
-        public double Iterate(GameState state, int depth, double alpha, double beta, bool player)
-        {
+            MoveValue moveValue;
+            MoveValue bestMove = null;
+
             if (depth == 0 || state.IsEnd())
             {
-                return state.GetTotalHeuristic();
+                return new MoveValue(state.GetTotalHeuristic());
             }
 
             if (player == maxPlayer)
             {
                 foreach (GameState child in state.GenerateMoves(player))
                 {
-                    double temp = Iterate(child, depth - 1, alpha, beta, !player);
-                    if (temp > alpha) 
+                    moveValue = Iterate(child, depth - 1, alpha, beta, !player);
+                    if (bestMove == null || (moveValue.getValue() > bestMove.getValue()))
                     {
-                        this.bestMovei = child.GetLastMoveI();
-                        this.bestMovej = child.GetLastMoveJ();
-                        alpha = temp;
+                        bestMove = new MoveValue(moveValue.getValue(), new Move(state, child));
+                        alpha = bestMove.getValue();
                     }
 
-                    if (beta < alpha)
+                    if (beta <= alpha)
                     {
-                        break;
+                        return new MoveValue(alpha);
                     }
 
                 }
-
-                return alpha;
+                return bestMove;
             }
             else
             {
                 foreach (GameState child in state.GenerateMoves(player))
                 {
-                    beta = Math.Min(beta, Iterate(child, depth - 1, alpha, beta, !player));
-
-                    if (beta < alpha)
+                    moveValue = Iterate(child, depth - 1, alpha, beta, !player);
+                    if (bestMove == null || (moveValue.getValue() < bestMove.getValue()))
                     {
-                        break;
+                        bestMove = new MoveValue(moveValue.getValue(), new Move(state, child));
+                        beta = bestMove.getValue();
+                    }
+
+                    if (beta <= alpha)
+                    {
+                        return new MoveValue(beta);
                     }
                 }
 
-                return beta;
+                return bestMove;
             }
         }
     }
