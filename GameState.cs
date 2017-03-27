@@ -19,7 +19,7 @@ namespace HexaBotImplementation
 
         const int cols = 11;
 
-        static Dictionary<GameState, double> probabilityTable;
+        static Dictionary<string, double> probabilityTable;
 
         static List<GameState> gameHistory;
         private struct Position
@@ -75,9 +75,32 @@ namespace HexaBotImplementation
         public void ReadProbabilityTable()
         {
             //TODO reads probabilities from file
-            probabilityTable = new Dictionary<GameState, double>();
+            probabilityTable = new Dictionary<string, double>();
             Deserialize();
             return;
+        }
+        private string getstring()
+        {
+            string boardstate="";
+            for(int i = 0; i < rows; i++)
+            {
+                for(int j = 0; j < cols; j++)
+                {
+                    if (board[i, j] == 0)
+                    {
+                        boardstate += "0";
+                    }
+                    else if (board[i, j] == 1)
+                    {
+                        boardstate += "1";
+                    }
+                    else
+                    {
+                        boardstate += "2";
+                    }
+                }
+            }
+            return boardstate;
         }
         public void UpdateProbabilityTable(GameState status)
         {
@@ -86,13 +109,13 @@ namespace HexaBotImplementation
                 for (int i = 0; i < gameHistory.Count(); i++)
                 {
 
-                    if (probabilityTable.ContainsKey(gameHistory[i]))
+                    if (probabilityTable.ContainsKey(gameHistory[i].getstring()))
                     {
-                        probabilityTable[gameHistory[i]] = gameHistory[i].GetProbability() + ((i * probfactor) / gameHistory.Count());
+                        probabilityTable[gameHistory[i].getstring()] += ((i * probfactor) / gameHistory.Count());
                     }
                     else
                     {
-                        probabilityTable.Add(gameHistory[i], (i * probfactor) / gameHistory.Count());
+                        probabilityTable.Add(gameHistory[i].getstring(), (i * probfactor) / gameHistory.Count());
                     }
                 }
             }
@@ -101,17 +124,17 @@ namespace HexaBotImplementation
                 for (int i = 0; i < gameHistory.Count(); i++)
                 {
 
-                    if (probabilityTable.ContainsKey(gameHistory[i]))
+                    if (probabilityTable.ContainsKey(gameHistory[i].getstring()))
                     {
-                        probabilityTable[gameHistory[i]] = gameHistory[i].GetProbability() - ((i * probfactor) / gameHistory.Count());
+                        probabilityTable[gameHistory[i].getstring()] -= ((i * probfactor) / gameHistory.Count());
                     }
                     else
                     {
-                        probabilityTable.Add(gameHistory[i], -(i * probfactor) / gameHistory.Count());
+                        probabilityTable.Add(gameHistory[i].getstring(), -(i * probfactor) / gameHistory.Count());
                     }
                 }
             }
-            
+
             Serialize();
 
             //TODO updates and re-writes probability table based on gameHistory
@@ -184,7 +207,7 @@ namespace HexaBotImplementation
             {
                 adjacents.Add(new Position(pos.i, pos.j - 1));
             }
-            
+
             if (InRange(pos.i - 1, pos.j + 1))
             {
                 adjacents.Add(new Position(pos.i - 1, pos.j - 1));
@@ -266,7 +289,7 @@ namespace HexaBotImplementation
                     }
                 }
             }
-            
+
             //If game is still going
             return GameStatus.ONGOING;
         }
@@ -287,13 +310,13 @@ namespace HexaBotImplementation
         }
         private double GetProbability()
         {
-            if (probabilityTable.ContainsKey(this))
+            if (probabilityTable.ContainsKey(this.getstring()))
             {
-                return probabilityTable[this];
+                return probabilityTable[this.getstring()];
             }
             else
             {
-                probabilityTable.Add(this, 0.5d);
+                probabilityTable.Add(this.getstring(), 0.5d);
                 return 0.5d;
             }
         }
@@ -307,7 +330,7 @@ namespace HexaBotImplementation
             {
                 var f_fileStream = File.OpenRead(@"dictionarySerialized.xml");
                 var f_binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
-                probabilityTable = (Dictionary<GameState, double>)f_binaryFormatter.Deserialize(f_fileStream);
+                probabilityTable = (Dictionary<string, double>)f_binaryFormatter.Deserialize(f_fileStream);
                 f_fileStream.Close();
             }
             catch (Exception ex)
@@ -388,7 +411,7 @@ namespace HexaBotImplementation
             }
 
             double[][] newGameOfY = createNewY(size - 1);
-            
+
             for (int i = 0; i < size - 1; i++)
             {
                 for (int j = 0; j < i + 1; j++)
