@@ -32,9 +32,20 @@ namespace HexaBotImplementation
                 this.j = j;
             }
         }
+        public GameState()
+        {
+            this.board = new int[rows, cols];
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    board[i, j] = 0;
+                }
+            }
+        }
         public GameState(int[,] board)
         {
-            this.board = board;
+            this.board = CopyBoard(board);
         }
         public override bool Equals(object obj)
         {
@@ -97,7 +108,7 @@ namespace HexaBotImplementation
             //TODO updates and re-writes probability table based on gameHistory
             return;
         }
-        private static int[,] CopyBoard(int[,] board)
+        private int[,] CopyBoard(int[,] board)
         {
             int[,] temp = new int[rows, cols];
             for (int i = 0; i < rows; i++)
@@ -164,7 +175,7 @@ namespace HexaBotImplementation
             {
                 adjacents.Add(new Position(pos.i, pos.j - 1));
             }
-            
+
             if (InRange(pos.i - 1, pos.j + 1))
             {
                 adjacents.Add(new Position(pos.i - 1, pos.j + 1));
@@ -246,7 +257,7 @@ namespace HexaBotImplementation
                     }
                 }
             }
-            
+
             //If game is still going
             return GameStatus.ONGOING;
         }
@@ -369,7 +380,7 @@ namespace HexaBotImplementation
             }
 
             double[][] newGameOfY = CreateNewY(size - 1);
-            
+
             for (int i = 0; i < size - 1; i++)
             {
                 for (int j = 0; j < i + 1; j++)
