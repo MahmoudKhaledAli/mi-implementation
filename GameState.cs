@@ -13,13 +13,13 @@ namespace HexaBotImplementation
 
         private int[,] board;
 
-        const double probfactor = 0.05;
-
         const int rows = 11;
 
         const int cols = 11;
 
-        static Dictionary<string, double> probabilityTable;
+        const int ySize = 2 * rows - 1;
+
+        static Dictionary<GameState, double> probabilityTable;
 
         static List<GameState> gameHistory;
         private struct Position
@@ -32,9 +32,20 @@ namespace HexaBotImplementation
                 this.j = j;
             }
         }
+        public GameState()
+        {
+            this.board = new int[rows, cols];
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    board[i, j] = 0;
+                }
+            }
+        }
         public GameState(int[,] board)
         {
-            this.board = board;
+            this.board = CopyBoard(board);
         }
         public override bool Equals(object obj)
         {
@@ -75,72 +86,29 @@ namespace HexaBotImplementation
         public void ReadProbabilityTable()
         {
             //TODO reads probabilities from file
-            probabilityTable = new Dictionary<string, double>();
+            probabilityTable = new Dictionary<GameState, double>();
             Deserialize();
             return;
         }
-        private string getstring()
+        public void UpdateProbabilityTable()
         {
-            string boardstate="";
-            for(int i = 0; i < rows; i++)
+            for (int i = 0; i < gameHistory.Count(); i++)
             {
-                for(int j = 0; j < cols; j++)
+                if (probabilityTable.ContainsKey(gameHistory[i]))
                 {
-                    if (board[i, j] == 0)
-                    {
-                        boardstate += "0";
-                    }
-                    else if (board[i, j] == 1)
-                    {
-                        boardstate += "1";
-                    }
-                    else
-                    {
-                        boardstate += "2";
-                    }
+                    probabilityTable[gameHistory[i]] = gameHistory[i].GetProbability() + (((i + 1) * 0.1) / gameHistory.Count());
+                }
+                else
+                {
+                    probabilityTable.Add(gameHistory[i], ((i + 1) * 0.1) / gameHistory.Count());
                 }
             }
-            return boardstate;
-        }
-        public void UpdateProbabilityTable(GameState status)
-        {
-            if (status.CheckGameStatus() == GameStatus.WIN)
-            {
-                for (int i = 0; i < gameHistory.Count(); i++)
-                {
-
-                    if (probabilityTable.ContainsKey(gameHistory[i].getstring()))
-                    {
-                        probabilityTable[gameHistory[i].getstring()] += ((i * probfactor) / gameHistory.Count());
-                    }
-                    else
-                    {
-                        probabilityTable.Add(gameHistory[i].getstring(), (i * probfactor) / gameHistory.Count());
-                    }
-                }
-            }
-            else
-            {
-                for (int i = 0; i < gameHistory.Count(); i++)
-                {
-
-                    if (probabilityTable.ContainsKey(gameHistory[i].getstring()))
-                    {
-                        probabilityTable[gameHistory[i].getstring()] -= ((i * probfactor) / gameHistory.Count());
-                    }
-                    else
-                    {
-                        probabilityTable.Add(gameHistory[i].getstring(), -(i * probfactor) / gameHistory.Count());
-                    }
-                }
-            }
-
             Serialize();
 
             //TODO updates and re-writes probability table based on gameHistory
             return;
         }
-        private static int[,] CopyBoard(int[,] board)
+        private int[,] CopyBoard(int[,] board)
         {
             int[,] temp = new int[rows, cols];
             for (int i = 0; i < rows; i++)
@@ -210,7 +178,7 @@ namespace HexaBotImplementation
 
             if (InRange(pos.i - 1, pos.j + 1))
             {
-                adjacents.Add(new Position(pos.i - 1, pos.j - 1));
+                adjacents.Add(new Position(pos.i - 1, pos.j + 1));
             }
 
             if (InRange(pos.i + 1, pos.j - 1))
@@ -306,17 +274,17 @@ namespace HexaBotImplementation
         public double GetYReduction()
         {
             //TODO Get the y reduction heuristic
-            return microReduction(convertToY(), 2 * (rows - 1));
+            return MicroReduction(ConvertToY(), ySize);
         }
         private double GetProbability()
         {
-            if (probabilityTable.ContainsKey(this.getstring()))
+            if (probabilityTable.ContainsKey(this))
             {
-                return probabilityTable[this.getstring()];
+                return probabilityTable[this];
             }
             else
             {
-                probabilityTable.Add(this.getstring(), 0.5d);
+                probabilityTable.Add(this, 0.5d);
                 return 0.5d;
             }
         }
@@ -330,7 +298,7 @@ namespace HexaBotImplementation
             {
                 var f_fileStream = File.OpenRead(@"dictionarySerialized.xml");
                 var f_binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
-                probabilityTable = (Dictionary<string, double>)f_binaryFormatter.Deserialize(f_fileStream);
+                probabilityTable = (Dictionary<GameState, double>)f_binaryFormatter.Deserialize(f_fileStream);
                 f_fileStream.Close();
             }
             catch (Exception ex)
@@ -352,7 +320,7 @@ namespace HexaBotImplementation
                 ;
             }
         }
-        private double[][] createNewY(int size)
+        private double[][] CreateNewY(int size)
         {
             double[][] gameOfY = new double[size][];
             for (int i = 0; i < size; i++)
@@ -361,9 +329,10 @@ namespace HexaBotImplementation
             }
             return gameOfY;
         }
-        private double[][] convertToY()
+        private double[][] ConvertToY()
         {
-            double[][] gameOfY = createNewY(2 * (rows - 1));
+            double[][] gameOfY = CreateNewY(ySize);
+
             for (int i = 0; i < rows - 1; i++)
             {
                 for (int j = 0; j < i + 1; j++)
@@ -371,7 +340,7 @@ namespace HexaBotImplementation
                     gameOfY[i][j] = 0;
                 }
             }
-            for (int i = rows - 1; i < 2 * (rows - 1); i++)
+            for (int i = rows - 1; i < ySize; i++)
             {
                 for (int j = 0; j < i - rows + 1; j++)
                 {
@@ -399,28 +368,33 @@ namespace HexaBotImplementation
 
             return gameOfY;
         }
-        private double calculateReductionProbability(double p1, double p2, double p3)
+        private double CalculateReductionProbability(double p1, double p2, double p3)
         {
             return p1 * p2 + p1 * p3 + p2 * p3 - 2 * p1 * p2 * p3;
         }
-        private double microReduction(double[][] gameOfY, int size)
+        private double MicroReduction(double[][] gameOfY, int size)
         {
             if (size == 1)
             {
                 return gameOfY[0][0];
             }
 
-            double[][] newGameOfY = createNewY(size - 1);
+            double[][] newGameOfY = CreateNewY(size - 1);
 
             for (int i = 0; i < size - 1; i++)
             {
                 for (int j = 0; j < i + 1; j++)
                 {
-                    newGameOfY[i][j] = calculateReductionProbability(gameOfY[i][j], gameOfY[i + 1][j + 1], gameOfY[i + 1][j]);
+                    newGameOfY[i][j] = CalculateReductionProbability(gameOfY[i][j], gameOfY[i + 1][j + 1], gameOfY[i + 1][j]);
                 }
             }
 
-            return microReduction(newGameOfY, size - 1);
+            return MicroReduction(newGameOfY, size - 1);
+        }
+        public void ApplyMove(Move move, bool player)
+        {
+            int newHex = player ? 1 : 2;
+            board[move.getMoveI(), move.getMoveJ()] = newHex;
         }
     }
 }
