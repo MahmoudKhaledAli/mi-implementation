@@ -17,6 +17,8 @@ namespace HexaBotImplementation
 
         const int cols = 11;
 
+        const int ySize = 2 * rows - 1;
+
         static Dictionary<GameState, double> probabilityTable;
 
         static List<GameState> gameHistory;
@@ -165,7 +167,7 @@ namespace HexaBotImplementation
             
             if (InRange(pos.i - 1, pos.j + 1))
             {
-                adjacents.Add(new Position(pos.i - 1, pos.j - 1));
+                adjacents.Add(new Position(pos.i - 1, pos.j + 1));
             }
 
             if (InRange(pos.i + 1, pos.j - 1))
@@ -261,7 +263,7 @@ namespace HexaBotImplementation
         public double GetYReduction()
         {
             //TODO Get the y reduction heuristic
-            return microReduction(convertToY(), 2 * (rows - 1));
+            return MicroReduction(ConvertToY(), ySize);
         }
         private double GetProbability()
         {
@@ -307,7 +309,7 @@ namespace HexaBotImplementation
                 ;
             }
         }
-        private double[][] createNewY(int size)
+        private double[][] CreateNewY(int size)
         {
             double[][] gameOfY = new double[size][];
             for (int i = 0; i < size; i++)
@@ -316,9 +318,10 @@ namespace HexaBotImplementation
             }
             return gameOfY;
         }
-        private double[][] convertToY()
+        private double[][] ConvertToY()
         {
-            double[][] gameOfY = createNewY(2 * (rows - 1));
+            double[][] gameOfY = CreateNewY(ySize);
+
             for (int i = 0; i < rows - 1; i++)
             {
                 for (int j = 0; j < i + 1; j++)
@@ -326,7 +329,7 @@ namespace HexaBotImplementation
                     gameOfY[i][j] = 0;
                 }
             }
-            for (int i = rows - 1; i < 2 * (rows - 1); i++)
+            for (int i = rows - 1; i < ySize; i++)
             {
                 for (int j = 0; j < i - rows + 1; j++)
                 {
@@ -354,28 +357,33 @@ namespace HexaBotImplementation
 
             return gameOfY;
         }
-        private double calculateReductionProbability(double p1, double p2, double p3)
+        private double CalculateReductionProbability(double p1, double p2, double p3)
         {
             return p1 * p2 + p1 * p3 + p2 * p3 - 2 * p1 * p2 * p3;
         }
-        private double microReduction(double[][] gameOfY, int size)
+        private double MicroReduction(double[][] gameOfY, int size)
         {
             if (size == 1)
             {
                 return gameOfY[0][0];
             }
 
-            double[][] newGameOfY = createNewY(size - 1);
+            double[][] newGameOfY = CreateNewY(size - 1);
             
             for (int i = 0; i < size - 1; i++)
             {
                 for (int j = 0; j < i + 1; j++)
                 {
-                    newGameOfY[i][j] = calculateReductionProbability(gameOfY[i][j], gameOfY[i + 1][j + 1], gameOfY[i + 1][j]);
+                    newGameOfY[i][j] = CalculateReductionProbability(gameOfY[i][j], gameOfY[i + 1][j + 1], gameOfY[i + 1][j]);
                 }
             }
 
-            return microReduction(newGameOfY, size - 1);
+            return MicroReduction(newGameOfY, size - 1);
+        }
+        public void ApplyMove(Move move, bool player)
+        {
+            int newHex = player ? 1 : 2;
+            board[move.getMoveI(), move.getMoveJ()] = newHex;
         }
     }
 }
