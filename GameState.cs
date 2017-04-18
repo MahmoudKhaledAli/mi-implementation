@@ -49,11 +49,11 @@ namespace HexaBotImplementation
         {
             this.board = CopyBoard(board);
         }
-        public static int getRows()
+        public static int GetRows()
         {
             return rows;
         }
-        public static int getCols()
+        public static int GetCols()
         {
             return cols;
         }
@@ -66,7 +66,7 @@ namespace HexaBotImplementation
         {
             return new GameState(board);
         }
-        public void ReadProbabilityTable()
+        public static void ReadProbabilityTable()
         {
             //TODO reads probabilities from file
             probabilityTable = new Dictionary<string, double>();
@@ -96,7 +96,15 @@ namespace HexaBotImplementation
             }
             return boardState;
         }
-        public void UpdateProbabilityTable(GameState status)
+        public static void InitHistory()
+        {
+            gameHistory = new List<GameState>();
+        }
+        public void AddToHistory()
+        {
+            gameHistory.Add(new GameState(board));
+        }
+        public static void UpdateProbabilityTable(GameState status)
         {
             if (status.CheckGameStatus() == GameStatus.WIN)
             {
@@ -149,8 +157,32 @@ namespace HexaBotImplementation
         public List<GameState> GenerateMoves(bool player)
         {
             //TODO Generate all possible game states from current state
+            bool firstMove = true;
+            bool oneMove = false;
+
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    if (board[i, j] != 0 && !oneMove) 
+                    {
+                        oneMove = true;
+                    }
+                    if (board[i, j] != 0 && oneMove)
+                    {
+                        firstMove = false;
+                    }
+                }
+            }
+
             int move;
             List<GameState> generatedStates = new List<GameState>();
+
+            if (firstMove)
+            {
+                generatedStates.Add(Transpose());
+            }
+
             if (player)
             {
                 move = 1; //mine
@@ -177,7 +209,7 @@ namespace HexaBotImplementation
         }
         private bool InRange(int i, int j)
         {
-            return i >= 0 && i < 11 && j >= 0 && j < 11;
+            return i >= 0 && i < rows && j >= 0 && j < cols;
         }
         private List<Position> GetAdjacent(Position pos)
         {
@@ -238,7 +270,7 @@ namespace HexaBotImplementation
                 {
                     if (dummyBoard[pos.i, pos.j] == 1)
                     {
-                        if (pos.j == 10)
+                        if (pos.j == cols - 1)
                         {
                             return GameStatus.WIN;
                         }
@@ -271,7 +303,7 @@ namespace HexaBotImplementation
                 {
                     if (dummyBoard[pos.i, pos.j] == 2)
                     {
-                        if (pos.i == 10)
+                        if (pos.i == rows - 1)
                         {
                             return GameStatus.LOSE;
                         }
@@ -292,15 +324,34 @@ namespace HexaBotImplementation
             GameStatus status = CheckGameStatus();
             return status == GameStatus.WIN || status == GameStatus.LOSE;
         }
+        public double GetTurnNo()
+        {
+            double count = 0;
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    if (board[i, j] == 1)
+                    {
+                        count++;
+                    }
+                }
+            }
+            return count;
+        }
         private double GetThreats()
         {
             //TODO Get the heuristic function of the threats
-            return 0.0d;
+            return 1.0d;
         }
         public double GetYReduction()
         {
             //TODO Get the y reduction heuristic
             return MicroReduction(ConvertToY(), ySize);
+        }
+        public double GetOtherYReduction()
+        {
+            return MicroReduction(Transpose().ConvertToY(), ySize);
         }
         private double GetProbability()
         {
@@ -310,15 +361,22 @@ namespace HexaBotImplementation
             }
             else
             {
-                probabilityTable.Add(this.GetString(), 0.5d);
                 return 0.5d;
             }
         }
         public double GetTotalHeuristic()
         {
-            return GetThreats() * GetYReduction() * GetProbability();
+            if (CheckGameStatus() == GameStatus.WIN)
+            {
+                return 20;
+            }
+            else if (CheckGameStatus() == GameStatus.LOSE)
+            {
+                return -1;
+            }
+            return GetThreats() * GetYReduction() * GetProbability() * 60.0d / GetTurnNo();
         }
-        private void Deserialize()
+        private static void Deserialize()
         {
             try
             {
@@ -332,7 +390,7 @@ namespace HexaBotImplementation
                 ;
             }
         }
-        private void Serialize()
+        private static void Serialize()
         {
             try
             {
@@ -419,8 +477,51 @@ namespace HexaBotImplementation
         }
         public void ApplyMove(Move move, bool player)
         {
+            if(move.GetMoveI() == -1 && move.GetMoveJ() == -1)
+            {
+                board = Transpose().board;
+            }
             int newHex = player ? 1 : 2;
-            board[move.getMoveI(), move.getMoveJ()] = newHex;
+            board[move.GetMoveI(), move.GetMoveJ()] = newHex;
+        }
+        public GameState Transpose()
+        {
+            GameState tranposed = new GameState();
+
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    switch (board[j,i])
+                    {
+                        case 1:
+                            tranposed.board[i, j] = 2;
+                            break;
+                        case 2:
+                            tranposed.board[i, j] = 1;
+                            break;
+                        default:
+                            tranposed.board[i, j] = 0;
+                            break;
+                    }
+                }
+            }
+            return tranposed;
+        }
+        public int GetEmptyCount()
+        {
+            int noOfMoves = 0;
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    if (board[i,j] == 0)
+                    {
+                        noOfMoves++;
+                    }
+                }
+            }
+            return noOfMoves;
         }
     }
 }

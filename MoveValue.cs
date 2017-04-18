@@ -21,11 +21,11 @@ namespace HexaBotImplementation
         {
             this.value = value;
         }
-        public double getValue()
+        public double GetValue()
         {
             return value;
         }
-        public Move getMove()
+        public Move GetMove()
         {
             return move;
         }

@@ -21,9 +21,20 @@ namespace HexaBotImplementation
         {
             int[,] prevBoard = prevState.GetBoard();
             int[,] nextBoard = nextState.GetBoard();
-            for (int i = 0; i < GameState.getRows(); i++)
+            for (int i = 0; i < GameState.GetRows(); i++)
             {
-                for (int j = 0; j < GameState.getCols(); j++)
+                for (int j = 0; j < GameState.GetCols(); j++)
+                {
+                    if (prevBoard[i, j] == 2 && nextBoard[j, i] == 1)
+                    {
+                        this.moveI = -1;
+                        this.moveJ = -1;
+                    }
+                }
+            }
+            for (int i = 0; i < GameState.GetRows(); i++)
+            {
+                for (int j = 0; j < GameState.GetCols(); j++)
                 {
                     if (prevBoard[i,j] != nextBoard[i,j])
                     {
@@ -34,13 +45,17 @@ namespace HexaBotImplementation
                 }
             }
         }
-        public int getMoveI()
+        public int GetMoveI()
         {
             return moveI;
         }
-        public int getMoveJ()
+        public int GetMoveJ()
         {
             return moveJ;
+        }
+        public Move Tranpose()
+        {
+            return new Move(moveJ, moveI);
         }
 
     }

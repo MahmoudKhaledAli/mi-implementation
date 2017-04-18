@@ -26,16 +26,20 @@ namespace HexaBotImplementation
             {
                 foreach (GameState child in state.GenerateMoves(player))
                 {
+                    //if(child.CheckGameStatus() == GameState.GameStatus.WIN)
+                    //{
+                    //    return new MoveValue(double.MaxValue, new Move(state, child));
+                    //}
                     moveValue = Iterate(child, depth - 1, alpha, beta, !player);
-                    if (bestMove == null || (moveValue.getValue() > bestMove.getValue()))
+                    if (bestMove == null || (moveValue.GetValue() > bestMove.GetValue()))
                     {
-                        bestMove = new MoveValue(moveValue.getValue(), new Move(state, child));
-                        alpha = bestMove.getValue();
+                        bestMove = new MoveValue(moveValue.GetValue(), new Move(state, child));
+                        alpha = bestMove.GetValue();
                     }
 
                     if (beta <= alpha)
                     {
-                        return new MoveValue(alpha);
+                        break;
                     }
 
                 }
@@ -46,15 +50,15 @@ namespace HexaBotImplementation
                 foreach (GameState child in state.GenerateMoves(player))
                 {
                     moveValue = Iterate(child, depth - 1, alpha, beta, !player);
-                    if (bestMove == null || (moveValue.getValue() < bestMove.getValue()))
+                    if (bestMove == null || (moveValue.GetValue() < bestMove.GetValue()))
                     {
-                        bestMove = new MoveValue(moveValue.getValue(), new Move(state, child));
-                        beta = bestMove.getValue();
+                        bestMove = new MoveValue(moveValue.GetValue(), new Move(state, child));
+                        beta = bestMove.GetValue();
                     }
 
                     if (beta <= alpha)
                     {
-                        return new MoveValue(beta);
+                        break;
                     }
                 }
 
