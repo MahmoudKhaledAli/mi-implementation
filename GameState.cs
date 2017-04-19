@@ -368,11 +368,11 @@ namespace HexaBotImplementation
         {
             if (CheckGameStatus() == GameStatus.WIN)
             {
-                return 20;
+                return 1000.0d / GetTurnNo();
             }
             else if (CheckGameStatus() == GameStatus.LOSE)
             {
-                return -1;
+                return -1000.0d / GetTurnNo();
             }
             return GetThreats() * GetYReduction() * GetProbability() * 60.0d / GetTurnNo();
         }
