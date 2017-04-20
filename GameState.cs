@@ -104,42 +104,93 @@ namespace HexaBotImplementation
         {
             gameHistory.Add(new GameState(board));
         }
-        public static void UpdateProbabilityTable(GameState status)
+        public void UpdateProbabilityTable(GameStatus status)
         {
-            if (status.CheckGameStatus() == GameStatus.WIN)
+            bool turn = false;
+            if (status == GameStatus.WIN)
             {
-                for (int i = 0; i < gameHistory.Count(); i++)
+                turn = true;
+                for (int i = gameHistory.Count() - 1; i > -1; i--)
                 {
-
-                    if (probabilityTable.ContainsKey(gameHistory[i].GetString()))
+                    if (turn)
                     {
-                        probabilityTable[gameHistory[i].GetString()] += ((i * probfactor) / gameHistory.Count());
+                        if (probabilityTable.ContainsKey(gameHistory[i].GetString()))
+                        {
+                            if (probabilityTable[gameHistory[i].GetString()] < 1)
+                            {
+                                probabilityTable[gameHistory[i].GetString()] += ((i * probfactor) / gameHistory.Count());
+                                if (probabilityTable[gameHistory[i].GetString()] > 1)
+                                    probabilityTable[gameHistory[i].GetString()] = 1;
+                            }
+                        }
+                        else
+                        {
+                            probabilityTable.Add(gameHistory[i].GetString(), 0.5 + ((i * probfactor) / gameHistory.Count()));
+                        }
+                        turn = false;
                     }
                     else
                     {
-                        probabilityTable.Add(gameHistory[i].GetString(), (i * probfactor) / gameHistory.Count());
+                        if (probabilityTable.ContainsKey(gameHistory[i].Transpose().GetString()))
+                        {
+                            if (probabilityTable[gameHistory[i].Transpose().GetString()] > 0)
+                            {
+                                probabilityTable[gameHistory[i].Transpose().GetString()] -= ((i * probfactor) / gameHistory.Count());
+                                if (probabilityTable[gameHistory[i].Transpose().GetString()] < 0)
+                                    probabilityTable[gameHistory[i].Transpose().GetString()] = 0;
+                            }
+                        }
+                        else
+                        {
+                            probabilityTable.Add(gameHistory[i].Transpose().GetString(), 0.5 - ((i * probfactor) / gameHistory.Count()));
+                        }
+                        turn = true;
                     }
                 }
             }
             else
             {
-                for (int i = 0; i < gameHistory.Count(); i++)
+                for (int i = gameHistory.Count() - 1; i > -1; i--)
                 {
-
-                    if (probabilityTable.ContainsKey(gameHistory[i].GetString()))
+                    if (turn)
                     {
-                        probabilityTable[gameHistory[i].GetString()] -= ((i * probfactor) / gameHistory.Count());
+                        if (probabilityTable.ContainsKey(gameHistory[i].GetString()))
+                        {
+                            if (probabilityTable[gameHistory[i].GetString()] > 0)
+                            {
+                                probabilityTable[gameHistory[i].GetString()] -= ((i * probfactor) / gameHistory.Count());
+                                if (probabilityTable[gameHistory[i].GetString()] < 0)
+                                    probabilityTable[gameHistory[i].GetString()] = 0;
+                            }
+                        }
+                        else
+                        {
+                            probabilityTable.Add(gameHistory[i].GetString(), 0.5 - ((i * probfactor) / gameHistory.Count()));
+                        }
+                        turn = false;
                     }
                     else
                     {
-                        probabilityTable.Add(gameHistory[i].GetString(), -(i * probfactor) / gameHistory.Count());
+                        if (probabilityTable.ContainsKey(gameHistory[i].Transpose().GetString()))
+                        {
+                            if (probabilityTable[gameHistory[i].Transpose().GetString()] < 1)
+                            {
+                                probabilityTable[gameHistory[i].Transpose().GetString()] += ((i * probfactor) / gameHistory.Count());
+                                if (probabilityTable[gameHistory[i].Transpose().GetString()] > 1)
+                                    probabilityTable[gameHistory[i].Transpose().GetString()] = 1;
+                            }
+                        }
+                        else
+                        {
+                            probabilityTable.Add(gameHistory[i].Transpose().GetString(), 0.5 + ((i * probfactor) / gameHistory.Count()));
+                        }
+                        turn = true;
                     }
                 }
             }
 
             Serialize();
-
-            //TODO updates and re-writes probability table based on gameHistory
+            
             return;
         }
         private static int[,] CopyBoard(int[,] board)
@@ -164,7 +215,7 @@ namespace HexaBotImplementation
             {
                 for (int j = 0; j < cols; j++)
                 {
-                    if (board[i, j] != 0 && !oneMove) 
+                    if (board[i, j] != 0 && !oneMove)
                     {
                         oneMove = true;
                     }
@@ -477,7 +528,7 @@ namespace HexaBotImplementation
         }
         public void ApplyMove(Move move, bool player)
         {
-            if(move.GetMoveI() == -1 && move.GetMoveJ() == -1)
+            if (move.GetMoveI() == -1 && move.GetMoveJ() == -1)
             {
                 board = Transpose().board;
             }
@@ -492,7 +543,7 @@ namespace HexaBotImplementation
             {
                 for (int j = 0; j < cols; j++)
                 {
-                    switch (board[j,i])
+                    switch (board[j, i])
                     {
                         case 1:
                             tranposed.board[i, j] = 2;
@@ -515,7 +566,7 @@ namespace HexaBotImplementation
             {
                 for (int j = 0; j < cols; j++)
                 {
-                    if (board[i,j] == 0)
+                    if (board[i, j] == 0)
                     {
                         noOfMoves++;
                     }
