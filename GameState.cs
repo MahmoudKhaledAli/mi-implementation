@@ -13,7 +13,7 @@ namespace HexaBotImplementation
 
         private int[,] board;
 
-        const double probfactor = 0.05;
+        const double probfactor = 0.1d;
 
         const int rows = 11;
 
@@ -57,7 +57,6 @@ namespace HexaBotImplementation
         {
             return cols;
         }
-
         public int[,] GetBoard()
         {
             return board;
@@ -104,7 +103,7 @@ namespace HexaBotImplementation
         {
             gameHistory.Add(new GameState(board));
         }
-        public void UpdateProbabilityTable(GameStatus status)
+        public static void UpdateProbabilityTable(GameStatus status)
         {
             bool turn = false;
             if (status == GameStatus.WIN)
@@ -190,7 +189,7 @@ namespace HexaBotImplementation
             }
 
             Serialize();
-            
+
             return;
         }
         private static int[,] CopyBoard(int[,] board)
@@ -205,27 +204,9 @@ namespace HexaBotImplementation
             }
             return temp;
         }
-        public List<GameState> GenerateMoves(bool player)
+        public List<GameState> GenerateMoves(bool player, bool firstMove)
         {
             //TODO Generate all possible game states from current state
-            bool firstMove = true;
-            bool oneMove = false;
-
-            for (int i = 0; i < rows; i++)
-            {
-                for (int j = 0; j < cols; j++)
-                {
-                    if (board[i, j] != 0 && !oneMove)
-                    {
-                        oneMove = true;
-                    }
-                    if (board[i, j] != 0 && oneMove)
-                    {
-                        firstMove = false;
-                    }
-                }
-            }
-
             int move;
             List<GameState> generatedStates = new List<GameState>();
 
@@ -256,6 +237,7 @@ namespace HexaBotImplementation
                     }
                 }
             }
+            generatedStates.Shuffle();
             return generatedStates;
         }
         private bool InRange(int i, int j)
@@ -377,7 +359,7 @@ namespace HexaBotImplementation
         }
         public double GetTurnNo()
         {
-            double count = 0;
+            double count = 1;
             for (int i = 0; i < rows; i++)
             {
                 for (int j = 0; j < cols; j++)
@@ -404,7 +386,7 @@ namespace HexaBotImplementation
         {
             return MicroReduction(Transpose().ConvertToY(), ySize);
         }
-        private double GetProbability()
+        public double GetProbability()
         {
             if (probabilityTable.ContainsKey(this.GetString()))
             {
@@ -419,13 +401,13 @@ namespace HexaBotImplementation
         {
             if (CheckGameStatus() == GameStatus.WIN)
             {
-                return 1000.0d / GetTurnNo();
+                return 100000000.0d / GetTurnNo();
             }
-            else if (CheckGameStatus() == GameStatus.LOSE)
+            if (CheckGameStatus() == GameStatus.LOSE)
             {
-                return -1000.0d / GetTurnNo();
+                return -100000000.0d;
             }
-            return GetThreats() * GetYReduction() * GetProbability() * 60.0d / GetTurnNo();
+            return (GetThreats() * GetYReduction() * GetProbability()) / GetTurnNo();
         }
         private static void Deserialize()
         {
@@ -531,6 +513,7 @@ namespace HexaBotImplementation
             if (move.GetMoveI() == -1 && move.GetMoveJ() == -1)
             {
                 board = Transpose().board;
+                return;
             }
             int newHex = player ? 1 : 2;
             board[move.GetMoveI(), move.GetMoveJ()] = newHex;
