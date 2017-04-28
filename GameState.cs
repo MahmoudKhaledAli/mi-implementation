@@ -13,11 +13,11 @@ namespace HexaBotImplementation
 
         private int[,] board;
 
-        const double probfactor = 0.1d;
+        const double probfactor = 0.05;
 
-        const int rows = 11;
+        const int rows = 3;
 
-        const int cols = 11;
+        const int cols = 4;
 
         const int ySize = 2 * rows - 1;
 
@@ -32,6 +32,16 @@ namespace HexaBotImplementation
             {
                 this.i = i;
                 this.j = j;
+            }
+        }
+        private struct Ones
+        {
+            public Position pos;
+            public List<Position> AdjList;
+            public Ones(Position p, List<Position> l)
+            {
+                pos = p;
+                AdjList = l;
             }
         }
         public GameState()
@@ -57,6 +67,7 @@ namespace HexaBotImplementation
         {
             return cols;
         }
+
         public int[,] GetBoard()
         {
             return board;
@@ -103,7 +114,7 @@ namespace HexaBotImplementation
         {
             gameHistory.Add(new GameState(board));
         }
-        public static void UpdateProbabilityTable(GameStatus status)
+        public void UpdateProbabilityTable(GameStatus status)
         {
             bool turn = false;
             if (status == GameStatus.WIN)
@@ -189,7 +200,7 @@ namespace HexaBotImplementation
             }
 
             Serialize();
-
+            
             return;
         }
         private static int[,] CopyBoard(int[,] board)
@@ -204,9 +215,27 @@ namespace HexaBotImplementation
             }
             return temp;
         }
-        public List<GameState> GenerateMoves(bool player, bool firstMove)
+        public List<GameState> GenerateMoves(bool player)
         {
             //TODO Generate all possible game states from current state
+            bool firstMove = true;
+            bool oneMove = false;
+
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    if (board[i, j] != 0 && !oneMove)
+                    {
+                        oneMove = true;
+                    }
+                    if (board[i, j] != 0 && oneMove)
+                    {
+                        firstMove = false;
+                    }
+                }
+            }
+
             int move;
             List<GameState> generatedStates = new List<GameState>();
 
@@ -237,7 +266,6 @@ namespace HexaBotImplementation
                     }
                 }
             }
-            generatedStates.Shuffle();
             return generatedStates;
         }
         private bool InRange(int i, int j)
@@ -359,7 +387,7 @@ namespace HexaBotImplementation
         }
         public double GetTurnNo()
         {
-            double count = 1;
+            double count = 0;
             for (int i = 0; i < rows; i++)
             {
                 for (int j = 0; j < cols; j++)
@@ -372,10 +400,177 @@ namespace HexaBotImplementation
             }
             return count;
         }
-        private double GetThreats()
+        List<Ones> GetACopy()
+        {
+            List<Ones> Copy = new List<Ones>();
+            for (int i = 0; i < rows; i++)
+            {
+                
+                for (int j = 0; j < cols; j++)
+                {
+
+                    if (board[i, j] == 1)
+                    {
+                        Position tempPos = new Position(i, j);
+                        List<Position> tempList = new List<Position>();
+                        tempList = GetAdjacent(tempPos);
+                        Ones tempOne = new Ones(tempPos, tempList);
+                       
+
+                        Copy.Add(tempOne);
+
+                    }
+                }
+            }
+            return Copy;
+        }
+        public double GetMyThreats()
         {
             //TODO Get the heuristic function of the threats
-            return 1.0d;
+            int rows = board.GetLength(0);
+            int col = board.GetLength(1);
+            List<Ones> myList = new List<Ones>();
+            
+            List<Position> ThreatsPos = new List<Position>();
+            double Threats = 0.0;
+
+            for (int i=0;i<rows;i++)
+            {
+                for(int j=0;j<col;j++)
+                {
+                    
+                    if(board[i,j]==1)
+                    {
+                        Position tempPos = new Position(i, j);
+                        List<Position> tempList = new List<Position>();
+                        tempList = GetAdjacent(tempPos);
+                        Ones tempOne = new Ones(tempPos, tempList);
+                        myList.Add(tempOne);
+                        
+                        
+
+                    }
+                }
+            }
+
+
+            for (int i = 0; i < myList.Count; i++)
+            {
+                //List<Ones> Copy = myList;
+                List<Ones> Copy = GetACopy();
+                Position currentPos = myList[i].pos;
+                List<Position> currentList = myList[i].AdjList;
+                Position checkingPos1 = new Position(0, 0);
+                Position checkingPos2 = checkingPos1;
+                bool firstCheck = false, secondCheck = false;
+                bool exists = false;
+
+                int j = i + 1;
+                int index = i + 1;
+
+                //check if this one is connected with any other one or not
+                while (j != Copy.Count)
+                {
+                    exists = IsInThisList(currentPos, Copy[j].AdjList);
+
+                    if (exists)
+                    {
+                        Copy.RemoveAt(j);
+                        j++;
+                        j--;
+                    }
+                    else
+                        j++;
+                }
+
+                if (Copy.Count != 1) // donc fih lesa 3l a2al one wahda msh connected beya  3shan law =1 yb2a ana bas  
+                {
+                    for (int l = index; l < Copy.Count; l++)
+                    {
+                        Position CurrentPosInList;
+                        bool existed;
+                        bool firstTime = true;
+                        for (int k = 0; k < currentList.Count; k++)
+                        {
+                            CurrentPosInList = currentList[k];
+                            existed = IsInThisList(CurrentPosInList, Copy[l].AdjList);
+                            if (existed)
+                            {
+                                if (firstTime)
+                                {
+                                    checkingPos1 = CurrentPosInList;
+                                        ThreatsPos.Add(checkingPos1);
+                                        firstCheck = true;
+                                   
+                                    
+                                    firstTime = false;
+                                }
+                                else
+                                {
+                                    //second time and the last one
+                                    checkingPos2 = CurrentPosInList;
+                                   
+                                        ThreatsPos.Add(checkingPos1);
+                                        secondCheck = true;
+                                    
+                                }
+                            }
+                            if (firstCheck && secondCheck) //donc weslet lel pair el common ma ben 2 ones
+                            {
+                                if (board[checkingPos1.i, checkingPos1.j] == 0)
+                                {
+                                    
+                                        if (board[checkingPos2.i, checkingPos2.j] == 0)
+                                            Threats += 1;
+                                        else if (board[checkingPos2.i, checkingPos2.j] == 1)
+                                            Threats += 1;
+                                    
+                                }
+                                else if (board[checkingPos1.i, checkingPos1.j] == 1)
+                                {
+                                   
+                                     if (board[checkingPos2.i, checkingPos2.j] == 0)
+                                            Threats += 1;
+                                    
+
+                                }
+
+                                firstCheck = false;
+                                secondCheck = false;
+                                firstTime = true;
+
+                            }
+
+                        }
+
+                    }
+
+                }
+            }
+
+            return Threats;
+        }
+
+        public double GetHisThreats()
+        {
+            
+            return this.Transpose().GetMyThreats();
+        }
+
+        public double GetThreats()
+        {
+            double MyThreats = GetMyThreats();
+            double HisThreats = GetHisThreats();
+            return (1 + MyThreats) / (1 + HisThreats);
+        }
+        private bool IsInThisList(Position p, List<Position> l)
+        {
+            for(int k=0;k<l.Count;k++)
+            {
+                if ((l[k].i==p.i) && (l[k].j==p.j))
+                    return true;
+            }
+            return false;
         }
         public double GetYReduction()
         {
@@ -386,7 +581,7 @@ namespace HexaBotImplementation
         {
             return MicroReduction(Transpose().ConvertToY(), ySize);
         }
-        public double GetProbability()
+        private double GetProbability()
         {
             if (probabilityTable.ContainsKey(this.GetString()))
             {
@@ -401,13 +596,14 @@ namespace HexaBotImplementation
         {
             if (CheckGameStatus() == GameStatus.WIN)
             {
-                return 100000000.0d / GetTurnNo();
+                return 1000.0d / GetTurnNo();
             }
-            if (CheckGameStatus() == GameStatus.LOSE)
+            else if (CheckGameStatus() == GameStatus.LOSE)
             {
-                return -100000000.0d;
+                return -1000.0d / GetTurnNo();
             }
-            return (GetThreats() * GetYReduction() * GetProbability()) / GetTurnNo();
+            return GetThreats() * GetYReduction() * GetProbability() * 60.0d / GetTurnNo();
+            
         }
         private static void Deserialize()
         {
@@ -513,7 +709,6 @@ namespace HexaBotImplementation
             if (move.GetMoveI() == -1 && move.GetMoveJ() == -1)
             {
                 board = Transpose().board;
-                return;
             }
             int newHex = player ? 1 : 2;
             board[move.GetMoveI(), move.GetMoveJ()] = newHex;
