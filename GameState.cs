@@ -564,7 +564,7 @@ namespace HexaBotImplementation
         {
             return MicroReduction(Transpose().ConvertToY(), ySize);
         }
-        private double GetProbability()
+        public double GetProbability()
         {
             if (probabilityTable.ContainsKey(this.GetString()))
             {
